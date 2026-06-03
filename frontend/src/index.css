@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fondos: #f9f9f9;
+  --color-tarjetas: #ffffff;
+  --color-textoPrincipal: #1a1a1a;
+  --color-textoSecundario: #6b7280;
+  --color-acentoChef: #2c3e50;
+}
+
+body {
+  background-color: var(--color-fondos);
+  color: var(--color-textoPrincipal);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    sans-serif;
+}
