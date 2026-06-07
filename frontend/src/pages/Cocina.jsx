@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export default function Cocina({ alCerrarSesion }) {
   const [usuario, setUsuario] = useState({ nombre: "Ayudante", rol: "user" });
-  const [seccionActiva, setSeccionActiva] = useState("planificador"); // planificador | supermercado | historial
+  const [seccionActiva, setSeccionActiva] = useState("planificador"); // planificador | supermercado | historial | admin
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -11,72 +11,12 @@ export default function Cocina({ alCerrarSesion }) {
   // Estado para controlar qué receta se está leyendo en el modal flotante
   const [recetaAbierta, setRecetaAbierta] = useState(null);
 
-  const ordenSecciones = ["planificador", "supermercado", "historial"];
+  // 🔌 Banco de recetas conectado dinámicamente con Firestore a través del Backend
+  const [bancoDeRecetas, setBancoDeRecetas] = useState([]);
 
-  // Banco de recetas enriquecido con instrucciones de preparación reales
-  const bancoDeRecetas = [
-    {
-      id: "r1",
-      nombre: "Ratatouille Tradicional",
-      tipo: "Vegano",
-      emoji: "🥘",
-      desc: "Rodajas de hortalizas horneadas con salsa de tomate y hierbas.",
-      ingredientes: [
-        { nombre: "Aceite de oliva", cantidad: 50, unidad: "ml" },
-        { nombre: "Berenjena", cantidad: 1, unidad: "unidad(es)" },
-        { nombre: "Calabacín", cantidad: 1, unidad: "unidad(es)" },
-        { nombre: "Tomates perita", cantidad: 2, unidad: "unidad(es)" },
-      ],
-      pasos: [
-        "Cortar la berenjena, el calabacín y los tomates en rodajas finas y uniformes.",
-        "Preparar una base de salsa de tomate con ajo y verterla sobre una fuente para horno.",
-        "Disponer las rodajas de hortalizas de forma intercalada, formando una espiral vistosa.",
-        "Rociar con aceite de oliva, sal, pimienta y tomillo fresco.",
-        "Cubrir con papel manteca y hornear a 180°C durante 40 minutos hasta que estén tiernas.",
-      ],
-    },
-    {
-      id: "r3",
-      nombre: "Risotto de Hongos",
-      tipo: "Vegetariano",
-      emoji: "🍄",
-      desc: "Arroz arborio cremoso cocinado a fuego lento con setas seleccionadas.",
-      ingredientes: [
-        { nombre: "Arroz Arborio", cantidad: 300, unidad: "g" },
-        { nombre: "Caldo de verduras", cantidad: 1, unidad: "L" },
-        { nombre: "Hongos Portobello", cantidad: 200, unidad: "g" },
-        { nombre: "Manteca", cantidad: 30, unidad: "g" },
-      ],
-      pasos: [
-        "Picar los hongos y saltearlos en una sartén con un poco de aceite hasta dorar. Reservar.",
-        "En la misma olla, dorar el arroz arborio por 2 minutos hasta que esté nácar.",
-        "Agregar el caldo de verduras caliente de a un cucharón por vez, revolviendo constantemente.",
-        "Esperar que el arroz absorba el líquido antes de agregar el siguiente cucharón (unos 18 minutos).",
-        "Apagar el fuego, incorporar los hongos, la manteca fría y revolver enérgicamente para mantecar.",
-      ],
-    },
-    {
-      id: "r2",
-      nombre: "Sopa de Cebolla Gusteau",
-      tipo: "Vegetariano",
-      emoji: "🥣",
-      desc: "Caldo profundo de cebollas caramelizadas con tostón de queso gratinado.",
-      ingredientes: [
-        { nombre: "Caldo de verduras", cantidad: 1, unidad: "L" },
-        { nombre: "Cebollas grandes", cantidad: 4, unidad: "unidad(es)" },
-        { nombre: "Manteca", cantidad: 50, unidad: "g" },
-        { nombre: "Queso Gruyere", cantidad: 150, unidad: "g" },
-      ],
-      pasos: [
-        "Cortar las cebollas en pluma fina.",
-        "Derretir la manteca a fuego bajo y cocinar las cebollas por 30 minutos hasta que caramelicen intensamente.",
-        "Verter el caldo de verduras caliente y cocinar a fuego lento por otros 20 minutos.",
-        "Servir en cuencos aptos para horno, colocar una tostada arriba y cubrir con abundante queso gruyere.",
-        "Gratinar en el horno al máximo hasta que el queso esté burbujeante y dorado.",
-      ],
-    },
-  ];
+  const ordenSecciones = ["planificador", "supermercado", "historial", "admin"];
 
+  // 1. useEffect: Carga las preferencias de usuario del localStorage
   useEffect(() => {
     const nombreGuardado = localStorage.getItem("nombre") || "Ayudante";
     setUsuario({
@@ -91,6 +31,30 @@ export default function Cocina({ alCerrarSesion }) {
         setAgendaFechas({});
       }
     }
+  }, []);
+
+  // 2. 🚀 useEffect NUEVO: Engancha con la Base de Datos real levantada en tu servidor
+  useEffect(() => {
+    const cargarPlatosDeFirestore = async () => {
+      try {
+        const respuesta = await fetch("http://localhost:3000/api/products");
+        const resultado = await respuesta.json();
+
+        // Sincroniza con el formato { status: "success", data: products } de tu controlador
+        if (resultado.status === "success" && Array.isArray(resultado.data)) {
+          setBancoDeRecetas(resultado.data);
+        } else {
+          console.error(
+            "El backend no devolvió el formato esperado:",
+            resultado,
+          );
+        }
+      } catch (error) {
+        console.error("Error de conexión con el servidor backend:", error);
+      }
+    };
+
+    cargarPlatosDeFirestore();
   }, []);
 
   const navegarAtras = () => {
@@ -169,7 +133,6 @@ export default function Cocina({ alCerrarSesion }) {
 
   const diasDeEstaSemana = obtenerDiasDeLaSemanaActual();
 
-  // 🧹 BOTÓN SOLICITADO: Limpia la lista del súper eliminando los platos solo de los 7 días de la semana activa
   const vaciarListaSemanal = () => {
     const confirmar = window.confirm(
       "🛒 ¿Querés vaciar los platos planificados para esta semana? Se mantendrá el resto de tu historial.",
@@ -255,9 +218,15 @@ export default function Cocina({ alCerrarSesion }) {
 
           <div className="bg-white/5 p-3 rounded-xl border border-white/5">
             <p className="text-xs text-gray-300 font-bold">{usuario.nombre}</p>
-            <p className="text-[10px] text-amber-400 uppercase tracking-widest font-extrabold mt-0.5">
-              🍽️ Modo Comensal
-            </p>
+            {usuario.rol === "chef" ? (
+              <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-extrabold mt-0.5">
+                👨‍🍳 Perfil: Chef Admin
+              </p>
+            ) : (
+              <p className="text-[10px] text-amber-400 uppercase tracking-widest font-extrabold mt-0.5">
+                🍽️ Modo Comensal
+              </p>
+            )}
           </div>
 
           <nav className="space-y-1">
@@ -280,6 +249,16 @@ export default function Cocina({ alCerrarSesion }) {
               <span>📜</span> Tu Historial
             </button>
 
+            {/* Botón exclusivo para el Chef Admin */}
+            {usuario.rol === "chef" && (
+              <button
+                onClick={() => setSeccionActiva("admin")}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${seccionActiva === "admin" ? "bg-emerald-600 text-white shadow-md" : "hover:bg-white/5 text-gray-300"}`}
+              >
+                <span>👨‍🍳</span> Gestión del Chef
+              </button>
+            )}
+
             {/* FLECHAS COMPACTAS */}
             <div className="pt-4 flex items-center justify-between border-t border-white/5 px-2">
               <button
@@ -294,7 +273,7 @@ export default function Cocina({ alCerrarSesion }) {
                 ←
               </button>
               <span className="text-[10px] font-bold text-gray-400 font-mono tracking-wider">
-                {ordenSecciones.indexOf(seccionActiva) + 1} / 3
+                {ordenSecciones.indexOf(seccionActiva) + 1} / 4
               </span>
               <button
                 onClick={navegarAdelante}
@@ -333,6 +312,7 @@ export default function Cocina({ alCerrarSesion }) {
               {seccionActiva === "supermercado" &&
                 "Chariot de Courses (Tu Compra Semanal)"}
               {seccionActiva === "historial" && "Tu Historial del Bistro"}
+              {seccionActiva === "admin" && "Trastienda del Chef (CRUD)"}
             </h2>
           </div>
 
@@ -360,36 +340,42 @@ export default function Cocina({ alCerrarSesion }) {
                   receta completa)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {bancoDeRecetas.map((plato) => (
-                    <div
-                      key={plato.id}
-                      className="p-4 bg-white rounded-2xl border border-amber-100/60 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all"
-                    >
-                      {/* Al hacer clic en la tarjeta, se abre el modal con la receta completa */}
+                  {bancoDeRecetas.length > 0 ? (
+                    bancoDeRecetas.map((plato) => (
                       <div
-                        className="flex gap-3 items-start mb-3 cursor-pointer"
-                        onClick={() => setRecetaAbierta(plato)}
+                        key={plato.id}
+                        className="p-4 bg-white rounded-2xl border border-amber-100/60 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all"
                       >
-                        <div className="text-3xl bg-amber-50 p-2 rounded-xl">
-                          {plato.emoji}
+                        <div
+                          className="flex gap-3 items-start mb-3 cursor-pointer"
+                          onClick={() => setRecetaAbierta(plato)}
+                        >
+                          <div className="text-3xl bg-amber-50 p-2 rounded-xl">
+                            {plato.emoji || "🍽️"}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm text-gray-800 hover:text-amber-600 transition-colors">
+                              {plato.nombre} 📖
+                            </h4>
+                            <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+                              {plato.desc}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-gray-800 hover:text-amber-600 transition-colors">
-                            {plato.nombre} 📖
-                          </h4>
-                          <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                            {plato.desc}
-                          </p>
-                        </div>
+                        <button
+                          onClick={() => agregarPlatoAFecha(plato)}
+                          className="w-full py-2 bg-amber-50 hover:bg-[#2C3E50] text-amber-800 hover:text-white rounded-xl text-xs font-bold uppercase transition-all cursor-pointer"
+                        >
+                          ➕ Sumar al día
+                        </button>
                       </div>
-                      <button
-                        onClick={() => agregarPlatoAFecha(plato)}
-                        className="w-full py-2 bg-amber-50 hover:bg-[#2C3E50] text-amber-800 hover:text-white rounded-xl text-xs font-bold uppercase transition-all cursor-pointer"
-                      >
-                        ➕ Sumar al día
-                      </button>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400 italic py-4 col-span-2">
+                      Cargando catálogo desde Firestore... Asegúrate de tener
+                      prendido el backend.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -408,7 +394,7 @@ export default function Cocina({ alCerrarSesion }) {
                           className="truncate cursor-pointer hover:text-amber-600"
                           onClick={() => setRecetaAbierta(plato)}
                         >
-                          {plato.emoji} {plato.nombre} 📖
+                          {plato.emoji || "🍽️"} {plato.nombre} 📖
                         </span>
                         <button
                           onClick={() => eliminarPlatoDeFecha(plato.id)}
@@ -428,7 +414,7 @@ export default function Cocina({ alCerrarSesion }) {
             </div>
           )}
 
-          {/* VISTA 2: SUPERMERCADO - COMPRA SEMANAL CON BOTÓN DE LIMPIEZA */}
+          {/* VISTA 2: SUPERMERCADO */}
           {seccionActiva === "supermercado" && (
             <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border border-amber-100 p-6 md:p-8">
               <div className="flex justify-between items-center border-b border-gray-100 pb-4 mb-6">
@@ -436,12 +422,11 @@ export default function Cocina({ alCerrarSesion }) {
                   <h3 className="font-serif font-bold text-xl">
                     Compra Semanal 🛒
                   </h3>
-                  <p className="text-xs text-[#amber-700] bg-amber-50 px-2 py-1 rounded-lg mt-1 inline-block font-mono font-bold">
+                  <p className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg mt-1 inline-block font-mono font-bold">
                     📅 Del {lunesFormateado} al {domingoFormateado}
                   </p>
                 </div>
 
-                {/* 🧹 NUEVO BOTÓN: Limpia la lista del súper semanal */}
                 {listaSuperConsolidada.length > 0 && (
                   <button
                     onClick={vaciarListaSemanal}
@@ -546,7 +531,7 @@ export default function Cocina({ alCerrarSesion }) {
                                       onClick={() => setRecetaAbierta(plato)}
                                       className="bg-white px-2.5 py-1 rounded-xl border border-gray-100 shadow-2xs text-xs font-medium text-gray-700 cursor-pointer hover:text-amber-600 transition-colors"
                                     >
-                                      {plato.emoji} {plato.nombre} 📖
+                                      {plato.emoji || "🍽️"} {plato.nombre} 📖
                                     </span>
                                   ),
                               )}
@@ -574,23 +559,50 @@ export default function Cocina({ alCerrarSesion }) {
               )}
             </div>
           )}
+
+          {/* VISTA 4: PANEL DEL CHEF ADMINISTRADOR */}
+          {seccionActiva === "admin" && (
+            <div className="bg-white p-8 rounded-3xl shadow-xl border border-amber-100 max-w-4xl mx-auto">
+              <div className="flex items-center gap-3 border-b border-amber-100 pb-4 mb-6">
+                <span className="text-3xl">👨‍🍳</span>
+                <div>
+                  <h2 className="text-2xl font-extrabold text-[#2C3E50] font-serif">
+                    Panel de Gestión del Chef
+                  </h2>
+                  <p className="text-xs text-gray-400 uppercase tracking-widest mt-0.5">
+                    Aquí podrás Crear, Editar y Eliminar las recetas del Bistro
+                  </p>
+                </div>
+              </div>
+
+              {/* Contenedor provisorio para nuestro futuro CRUD */}
+              <div className="p-12 border-2 border-dashed border-amber-200 rounded-2xl bg-amber-50/20 text-center">
+                <p className="text-amber-800 font-medium">
+                  🚀 ¡Zona del Chef activada con éxito!
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Próximo paso: Empezar a diseñar el formulario para agregar
+                  platos.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* 📖 MODAL FLOTANTE: El libro de cocina interactivo */}
+      {/* 📖 MODAL FLOTANTE */}
       {recetaAbierta && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-amber-100 shadow-2xl space-y-6">
-            {/* Cabecera del libro */}
             <div className="flex justify-between items-start border-b border-gray-100 pb-4">
               <div className="flex gap-3 items-center">
-                <span className="text-4xl">{recetaAbierta.emoji}</span>
+                <span className="text-4xl">{recetaAbierta.emoji || "🍽️"}</span>
                 <div>
                   <h3 className="font-serif font-bold text-xl text-gray-800">
                     {recetaAbierta.nombre}
                   </h3>
                   <span className="text-[10px] uppercase font-extrabold tracking-wider bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md mt-1 inline-block">
-                    {recetaAbierta.tipo}
+                    {recetaAbierta.tipo || "Gourmet"}
                   </span>
                 </div>
               </div>
@@ -602,44 +614,54 @@ export default function Cocina({ alCerrarSesion }) {
               </button>
             </div>
 
-            {/* Listado interno de Ingredientes */}
             <div className="space-y-2">
               <h4 className="text-xs font-extrabold text-amber-800 uppercase tracking-widest">
                 🛒 Ingredientes Necesarios:
               </h4>
               <ul className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2 text-xs font-medium text-gray-700">
-                {recetaAbierta.ingredientes.map((ing, i) => (
-                  <li key={i} className="flex justify-between items-center">
-                    <span>• {ing.nombre}</span>
-                    <span className="font-mono font-bold text-gray-500">
-                      {ing.cantidad} {ing.unidad}
-                    </span>
+                {recetaAbierta.ingredientes &&
+                recetaAbierta.ingredientes.length > 0 ? (
+                  recetaAbierta.ingredientes.map((ing, i) => (
+                    <li key={i} className="flex justify-between items-center">
+                      <span>• {ing.nombre}</span>
+                      <span className="font-mono font-bold text-gray-500">
+                        {ing.cantidad} {ing.unidad}
+                      </span>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400 italic">
+                    No se especificaron ingredientes para este plato.
                   </li>
-                ))}
+                )}
               </ul>
             </div>
 
-            {/* Listado del Paso a Paso */}
             <div className="space-y-3">
               <h4 className="text-xs font-extrabold text-amber-800 uppercase tracking-widest">
                 👨‍🍳 Instrucciones de Preparación:
               </h4>
               <ol className="space-y-3 text-xs text-gray-600">
-                {recetaAbierta.pasos?.map((paso, i) => (
-                  <li
-                    key={i}
-                    className="flex gap-3 items-start bg-amber-50/20 p-2.5 rounded-xl border border-amber-100/20"
-                  >
-                    <span className="font-mono font-bold text-amber-600 bg-amber-100/50 w-5 h-5 rounded-full flex items-center justify-center shrink-0">
-                      {i + 1}
-                    </span>
-                    <p className="leading-relaxed">{paso}</p>
+                {recetaAbierta.pasos && recetaAbierta.pasos.length > 0 ? (
+                  recetaAbierta.pasos.map((paso, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-3 items-start bg-amber-50/20 p-2.5 rounded-xl border border-amber-100/20"
+                    >
+                      <span className="font-mono font-bold text-amber-600 bg-amber-100/50 w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </span>
+                      <p className="leading-relaxed">{paso}</p>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-400 italic">
+                    No se cargó el paso a paso para esta receta todavía.
                   </li>
-                ))}
+                )}
               </ol>
             </div>
 
-            {/* Botón de cierre */}
             <button
               onClick={() => setRecetaAbierta(null)}
               className="w-full py-2.5 bg-[#2C3E50] hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
