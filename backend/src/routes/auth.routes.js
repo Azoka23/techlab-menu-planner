@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "../config/firebase.js";
+import jwt from "jsonwebtoken"; // 👈 1. Importamos la librería para generar tokens reales
 
 const router = Router();
 
-// --- ✨ AJUSTADO: RUTA DE LOGIN REAL CON FIRESTORE ---
+// --- ✨ AJUSTADO: RUTA DE LOGIN REAL CON FIRESTORE Y JWT VALIDO ---
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -23,18 +24,29 @@ router.post("/login", async (req, res) => {
 
     // 3. Validamos la contraseña directa
     if (usuarioData.password !== password) {
-      return res
-        .status(401)
-        .json({
-          message: "Contraseña incorrecta. ¡Cuidado con quemar la salsa!",
-        });
+      return res.status(401).json({
+        message: "Contraseña incorrecta. ¡Cuidado con quemar la salsa!",
+      });
     }
 
-    // 4. Si todo está perfecto, le mandamos sus datos reales al Frontend
+    // 4. ✨ GENERAMOS EL TOKEN REAL usando la clave secreta de tu archivo .env
+    // Le metemos adentro el email, rol y nombre para que el middleware pueda leerlo si hace falta
+    const tokenReal = jwt.sign(
+      {
+        email: usuarioData.email,
+        rol: usuarioData.rol,
+        nombre: usuarioData.nombre,
+      },
+      process.env.JWT_SECRET_KEY, // 👈 Usa la clave "ClaveSuperSecretaPlanificadorMenu2026" de tu .env
+      { expiresIn: "4h" }, // El token va a vencer en 4 horas por seguridad
+    );
+
+    // 5. Si todo está perfecto, le mandamos sus datos reales y el TOKEN REAL al Frontend
     res.status(200).json({
+      status: "success", // Agregamos el status para mantener consistencia
       message: "¡Ingreso exitoso a la cocina!",
       data: {
-        token: "token-falso-bistro-123", // El token ficticio que espera tu frontend para validar
+        token: tokenReal, // 👈 ¡Mágia! Ahora viaja la firma válida que el middleware espera
         nombre: usuarioData.nombre,
         rol: usuarioData.rol,
       },
@@ -52,7 +64,7 @@ router.post("/register", async (req, res) => {
   const { nombre, email, password, rol, preferencia } = req.body;
 
   try {
-    // 1. Verificamos si el ayudante de cocina ya existe en Firestore
+    // 1. Verificamos si el ayudante de cocina ya existe in Firestore
     const userRef = db.collection("users").doc(email);
     const doc = await userRef.get();
 
