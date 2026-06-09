@@ -93,7 +93,7 @@ export default function Login({ alCambiarPantalla, alLoguearse }) {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="new-password"
               className="w-full px-4 py-3 rounded-xl border border-amber-200/60 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
-              placeholder="chef@techlab.com"
+              placeholder="Ej:linguini@bistro.com"
             />
           </div>
 

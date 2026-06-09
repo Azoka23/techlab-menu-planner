@@ -1,18 +1,64 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
-  // Estados prolijos y sincronizados 1:1 con el Backend en español
+  // 🧭 CONTROL DE PESTAÑAS INTERNAS
+  const [subSeccion, setSubSeccion] = useState("formulario"); // "formulario" o "catalogo"
+
+  // Estados del Formulario (CRUD)
   const [idEdicion, setIdEdicion] = useState(null);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [receta, setReceta] = useState("");
-
-  // Estado dinámico para Ingredientes
   const [ingredientes, setIngredientes] = useState([]);
   const [nuevoIngNombre, setNuevoIngNombre] = useState("");
   const [nuevoIngCant, setNuevoIngCant] = useState("");
   const [nuevoIngUnidad, setNuevoIngUnidad] = useState("gr");
+
+  // Estados de Búsqueda y Filtros
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEspecial, setFiltroEspecial] = useState("todos");
+
+  // 🧠 FILTRADO INTELIGENTE
+  const platosFiltrados = useMemo(() => {
+    return bancoDeRecetas.filter((plato) => {
+      const matchBusqueda =
+        plato.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        plato.descripcion?.toLowerCase().includes(busqueda.toLowerCase());
+
+      const ingredientesString = JSON.stringify(
+        plato.ingredientes || "",
+      ).toLowerCase();
+
+      if (filtroEspecial === "carne") {
+        return (
+          matchBusqueda &&
+          [
+            "carne",
+            "pollo",
+            "vaca",
+            "cerdo",
+            "lomo",
+            "bife",
+            "panceta",
+            "bife",
+          ].some((c) => ingredientesString.includes(c))
+        );
+      }
+      if (filtroEspecial === "veggie") {
+        return (
+          matchBusqueda &&
+          !["carne", "pollo", "vaca", "cerdo", "lomo", "bife", "panceta"].some(
+            (c) => ingredientesString.includes(c),
+          )
+        );
+      }
+      if (filtroEspecial === "arroz") {
+        return matchBusqueda && ingredientesString.includes("arroz");
+      }
+      return matchBusqueda;
+    });
+  }, [bancoDeRecetas, busqueda, filtroEspecial]);
 
   const sumarIngrediente = () => {
     if (!nuevoIngNombre || !nuevoIngCant) return;
@@ -28,10 +74,6 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
     setNuevoIngCant("");
   };
 
-  const quitarIngrediente = (index) => {
-    setIngredientes(ingredientes.filter((_, i) => i !== index));
-  };
-
   const activarEdicion = (plato) => {
     setIdEdicion(plato.id);
     setNombre(plato.nombre || "");
@@ -39,6 +81,7 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
     setDescripcion(plato.descripcion || "");
     setReceta(plato.receta || "");
     setIngredientes(plato.ingredientes || []);
+    setSubSeccion("formulario"); // 🔄 Te lleva directo a la ficha para editar
   };
 
   const limpiarFormulario = () => {
@@ -52,296 +95,347 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
 
   const guardarReceta = async (e) => {
     e.preventDefault();
-    if (!nombre) return alert("El nombre del plato es obligatorio.");
-
+    if (!nombre) return alert("El nombre es obligatorio.");
     const token = localStorage.getItem("token");
-    if (!token) return alert("No se encontró sesión activa. Volvé a ingresar.");
-
-    // ✨ Estructura limpia y transparente: misma forma en Front y Back
     const platoData = {
       nombre,
-      precio: precio ? Number(precio) : 0,
+      precio: Number(precio),
       descripcion,
       receta,
       ingredientes,
     };
-
     const url = idEdicion
       ? `http://localhost:3000/api/products/${idEdicion}`
       : "http://localhost:3000/api/products/create";
 
-    const method = idEdicion ? "PUT" : "POST";
-
     try {
-      const respuesta = await fetch(url, {
-        method,
+      const res = await fetch(url, {
+        method: idEdicion ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(platoData),
       });
-
-      if (respuesta.ok) {
-        alert(
-          idEdicion
-            ? "✨ Plato modificado con éxito"
-            : "👨‍🍳 ¡Nuevo plato agregado a la cocina!",
-        );
+      if (res.ok) {
+        alert(idEdicion ? "✨ ¡Plato modificado!" : "👨‍🍳 ¡Plato creado!");
         limpiarFormulario();
-        if (actualizarBanco) actualizarBanco();
-      } else {
-        const resultado = await respuesta.json();
-        alert(
-          "Error al guardar: " + (resultado.message || "Verificá los datos"),
-        );
+        if (actualizarBanco) await actualizarBanco();
+        setSubSeccion("catalogo"); // 🔄 Te manda a ver el catálogo actualizado
       }
-    } catch (error) {
-      console.error("Error de conexión:", error);
-      alert("Error de conexión con el servidor.");
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const eliminarReceta = async (id, nombrePlato) => {
-    if (
-      !window.confirm(
-        `⚠️ ¿Seguro que querés eliminar "${nombrePlato}" de la base de datos?`,
-      )
-    )
-      return;
-
+  const eliminarReceta = async (id, nombreP) => {
+    if (!window.confirm(`¿Seguro que querés eliminar ${nombreP}?`)) return;
     const token = localStorage.getItem("token");
-    if (!token) return alert("No se encontró sesión activa.");
-
-    try {
-      const respuesta = await fetch(
-        `http://localhost:3000/api/products/${id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      if (respuesta.ok) {
-        alert("Plato eliminado correctamente.");
-        if (actualizarBanco) actualizarBanco();
-      }
-    } catch (error) {
-      console.error("Error al eliminar:", error);
-    }
+    const res = await fetch(`http://localhost:3000/api/products/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) if (actualizarBanco) await actualizarBanco();
   };
 
   return (
-    <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start text-gray-700">
-      {/* 🧾 FORMULARIO DE RECOPILACIÓN */}
-      <div className="bg-white p-6 rounded-3xl shadow-xl border border-amber-100/70 space-y-5">
-        <div className="flex items-center gap-3 border-b border-amber-100 pb-3">
-          <span className="text-2xl">👨‍🍳</span>
-          <div>
-            <h2 className="text-xl font-bold font-serif text-[#2C3E50]">
+    <div className="max-w-4xl mx-auto space-y-6 text-gray-700">
+      {/* 🧭 SELECTOR DE VISTA (BOTONERA SUPERIOR) */}
+      <div className="flex justify-center bg-white p-1.5 rounded-2xl shadow-md border border-amber-100 max-w-sm mx-auto">
+        <button
+          onClick={() => setSubSeccion("formulario")}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            subSeccion === "formulario"
+              ? "bg-amber-500 text-white shadow-sm"
+              : "text-gray-500 hover:text-amber-600"
+          }`}
+        >
+          📝 {idEdicion ? "Editar Ficha" : "Nueva Receta"}
+        </button>
+        <button
+          onClick={() => setSubSeccion("catalogo")}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+            subSeccion === "catalogo"
+              ? "bg-amber-500 text-white shadow-sm"
+              : "text-gray-500 hover:text-amber-600"
+          }`}
+        >
+          📖 Libro de Recetas
+          <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-md font-extrabold">
+            {bancoDeRecetas.length}
+          </span>
+        </button>
+      </div>
+
+      {/* ---------------------------------------------------- */}
+      {/* 📝 SECCIÓN A: FORMULARIO AISLADO */}
+      {/* ---------------------------------------------------- */}
+      {subSeccion === "formulario" && (
+        <div className="bg-white p-6 rounded-3xl shadow-xl border border-amber-100/70 max-w-2xl mx-auto space-y-5">
+          <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+            <h3 className="text-lg font-bold font-serif text-[#2C3E50]">
               {idEdicion
-                ? "Editar Ficha del Plato"
-                : "Crear Nueva Especialidad"}
-            </h2>
-            <p className="text-[11px] text-gray-400 uppercase tracking-wider mt-0.5">
-              Gestioná el menú gastronómico de forma directa
-            </p>
-          </div>
-        </div>
-
-        <form onSubmit={guardarReceta} className="space-y-4 text-xs">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 space-y-1">
-              <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">
-                Nombre del Plato
-              </label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Risotto de Hongos"
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none bg-gray-50/50 font-medium"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">
-                Precio ($)
-              </label>
-              <input
-                type="number"
-                value={precio}
-                onChange={(e) => setPrecio(e.target.value)}
-                placeholder="0"
-                className="w-full p-3 border border-gray-200 rounded-xl text-center focus:ring-2 focus:ring-amber-400 focus:outline-none bg-gray-50/50 font-bold text-amber-800"
-              />
-            </div>
+                ? "Modificar Ficha Técnica del Plato"
+                : "Registrar Nueva Especialidad Gastronómica"}
+            </h3>
+            {idEdicion && (
+              <button
+                onClick={limpiarFormulario}
+                className="text-[10px] bg-rose-50 text-rose-600 px-2 py-1 rounded-lg font-bold hover:bg-rose-100"
+              >
+                Cancelar Edición
+              </button>
+            )}
           </div>
 
-          <div className="space-y-1">
-            <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">
-              Descripción / Reseña Corta
-            </label>
-            <input
-              type="text"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Ej: Pasta casera con salsa de nueces tostadas."
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none font-medium"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">
-              Receta / Preparación (Paso a Paso)
-            </label>
-            <textarea
-              rows="3"
-              value={receta}
-              onChange={(e) => setReceta(e.target.value)}
-              placeholder="1. Hervir agua con sal...&#10;2. Saltear hongos...&#10;3. Mezclar y servir."
-              className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none font-medium resize-none text-[11px]"
-            />
-          </div>
-
-          {/* Bloque de Ingredientes */}
-          <div className="border border-amber-100 bg-amber-50/10 p-4 rounded-2xl space-y-3">
-            <h4 className="font-bold text-amber-800 uppercase tracking-wider text-[10px] flex items-center gap-1">
-              <span>🛒</span> Ingredientes Requeridos
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-              <input
-                type="text"
-                value={nuevoIngNombre}
-                onChange={(e) => setNuevoIngNombre(e.target.value)}
-                placeholder="Nombre (ej: Queso)"
-                className="p-2 border border-gray-200 rounded-xl bg-white"
-              />
-              <input
-                type="number"
-                value={nuevoIngCant}
-                onChange={(e) => setNuevoIngCant(e.target.value)}
-                placeholder="Cant."
-                className="p-2 border border-gray-200 rounded-xl bg-white"
-              />
-              <div className="flex gap-1">
-                <select
-                  value={nuevoIngUnidad}
-                  onChange={(e) => setNuevoIngUnidad(e.target.value)}
-                  className="p-2 border border-gray-200 rounded-xl bg-white w-full font-medium"
-                >
-                  <option value="gr">gr</option>
-                  <option value="ml">ml</option>
-                  <option value="unidades">U.</option>
-                  <option value="cucharadas">Cdas</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={sumarIngrediente}
-                  className="px-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl cursor-pointer"
-                >
-                  ＋
-                </button>
+          <form onSubmit={guardarReceta} className="space-y-4 text-xs">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 space-y-1">
+                <label className="font-bold text-gray-400 uppercase text-[9px]">
+                  Nombre del Plato
+                </label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej: Lomo al Malbec"
+                  className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50/50 font-medium text-gray-800"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="font-bold text-gray-400 uppercase text-[9px]">
+                  Precio de Carta ($)
+                </label>
+                <input
+                  type="number"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                  placeholder="0"
+                  className="w-full p-3 border border-gray-200 rounded-xl text-center font-bold text-amber-800 bg-gray-50/50"
+                />
               </div>
             </div>
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {ingredientes.map((ing, i) => (
-                <span
-                  key={i}
-                  className="bg-white border border-amber-200 text-gray-700 px-2 py-1 rounded-lg flex items-center gap-1 font-medium text-[11px]"
-                >
-                  {ing.nombre} ({ing.cantidad} {ing.unidad})
+
+            <div className="space-y-1">
+              <label className="font-bold text-gray-400 uppercase text-[9px]">
+                Descripción Comercial Corta
+              </label>
+              <input
+                type="text"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+                placeholder="Ej: Corte tierno con reducción de vino y papas rústicas."
+                className="w-full p-3 border border-gray-200 rounded-xl text-gray-800"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-bold text-gray-400 uppercase text-[9px]">
+                Instrucciones de Cocina (Paso a Paso)
+              </label>
+              <textarea
+                rows="4"
+                value={receta}
+                onChange={(e) => setReceta(e.target.value)}
+                placeholder="Pasos detallados para el personal de cocina..."
+                className="w-full p-3 border border-gray-200 rounded-xl resize-none text-gray-800"
+              />
+            </div>
+
+            {/* Bloque de ingredientes */}
+            <div className="bg-amber-50/10 p-4 rounded-2xl border border-amber-100 space-y-3">
+              <h4 className="font-bold text-amber-800 uppercase text-[9px]">
+                🛒 Desglose de Ingredientes
+              </h4>
+              <div className="grid grid-cols-3 gap-2 items-end">
+                <input
+                  type="text"
+                  value={nuevoIngNombre}
+                  onChange={(e) => setNuevoIngNombre(e.target.value)}
+                  placeholder="Ingrediente"
+                  className="p-2.5 border border-gray-200 rounded-xl bg-white col-span-1 text-xs"
+                />
+                <input
+                  type="number"
+                  value={nuevoIngCant}
+                  onChange={(e) => setNuevoIngCant(e.target.value)}
+                  placeholder="Cant"
+                  className="p-2.5 border border-gray-200 rounded-xl bg-white text-xs"
+                />
+                <div className="flex gap-1">
+                  <select
+                    value={nuevoIngUnidad}
+                    onChange={(e) => setNuevoIngUnidad(e.target.value)}
+                    className="p-2.5 border border-gray-200 rounded-xl bg-white w-full text-xs font-medium"
+                  >
+                    <option value="gr">gr</option>
+                    <option value="ml">ml</option>
+                    <option value="unidades">U.</option>
+                  </select>
                   <button
                     type="button"
-                    onClick={() => quitarIngrediente(i)}
-                    className="text-rose-500 font-bold hover:text-rose-700 pl-1"
+                    onClick={sumarIngrediente}
+                    className="bg-amber-500 hover:bg-amber-600 text-white px-3 rounded-xl font-bold cursor-pointer"
                   >
-                    ✕
+                    ＋
                   </button>
-                </span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {ingredientes.map((ing, i) => (
+                  <span
+                    key={i}
+                    className="bg-white border border-amber-200 text-gray-700 px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium text-[11px]"
+                  >
+                    {ing.nombre} ({ing.cantidad} {ing.unidad})
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setIngredientes(
+                          ingredientes.filter((_, idx) => idx !== i),
+                        )
+                      }
+                      className="text-rose-500 font-bold pl-1 hover:text-rose-700"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase rounded-xl shadow-md cursor-pointer tracking-wider text-center text-xs"
+            >
+              {idEdicion
+                ? "💾 Actualizar Ficha de la Especialidad"
+                : "🚀 Publicar en el Catálogo General"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 📖 SECCIÓN B: LIBRO DE RECETAS (CATÁLOGO INDEPENDIENTE) */}
+      {/* ---------------------------------------------------- */}
+      {subSeccion === "catalogo" && (
+        <div className="space-y-4 animate-fade-in">
+          {/* Barra de Filtros y Buscador limpia */}
+          <div className="bg-white p-4 rounded-2xl shadow-md border border-amber-100 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full md:w-96">
+              <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+              <input
+                type="text"
+                placeholder="Filtrar por nombre o ingrediente..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:outline-none text-xs text-gray-800 font-medium"
+              />
+            </div>
+
+            <div className="flex gap-1.5 overflow-x-auto pb-1 md:pb-0 w-full md:w-auto">
+              {[
+                { id: "todos", label: "Ver Todos", icon: "🍽️" },
+                { id: "carne", label: "Carnes", icon: "🥩" },
+                { id: "veggie", label: "Veggie", icon: "🥗" },
+                { id: "arroz", label: "Con Arroz", icon: "🍚" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setFiltroEspecial(f.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                    filtroEspecial === f.id
+                      ? "bg-amber-500 text-white shadow-md"
+                      : "bg-amber-50 text-amber-800 hover:bg-amber-100"
+                  }`}
+                >
+                  <span>{f.icon}</span> {f.label}
+                </button>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="submit"
-              className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold uppercase rounded-xl shadow-md cursor-pointer tracking-wider text-center text-xs"
-            >
-              {idEdicion ? "💾 Guardar Cambios" : "🚀 Publicar Especialidad"}
-            </button>
-            {idEdicion && (
-              <button
-                type="button"
-                onClick={limpiarFormulario}
-                className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold uppercase rounded-xl cursor-pointer"
-              >
-                Cancelar
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+          {/* El listado, ahora aislado y cómodo */}
+          <div className="bg-white rounded-3xl shadow-xl border border-amber-100 overflow-hidden">
+            <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                Detalle de Especialidades
+              </span>
+              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">
+                Mostrando {platosFiltrados.length}
+              </span>
+            </div>
 
-      {/* 📜 LISTA DE PLATOS DISPONIBLES EN EL CATALOGO */}
-      <div className="bg-white p-6 rounded-3xl shadow-xl border border-amber-100 space-y-4">
-        <div className="border-b border-gray-100 pb-3">
-          <h3 className="text-lg font-bold font-serif text-[#2C3E50]">
-            Catálogo de Especialidades
-          </h3>
-          <p className="text-[11px] text-gray-400 font-medium">
-            Platos guardados en Firestore ({bancoDeRecetas.length})
-          </p>
-        </div>
+            <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto p-4 space-y-1">
+              {platosFiltrados.map((plato) => (
+                <div
+                  key={plato.id}
+                  className="py-3 px-3 flex items-center justify-between group hover:bg-amber-50/20 rounded-xl transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-xl bg-gray-50 p-2.5 rounded-xl border border-gray-100 shadow-sm">
+                      {JSON.stringify(plato.ingredientes || "")
+                        .toLowerCase()
+                        .includes("arroz")
+                        ? "🍚"
+                        : ["carne", "pollo", "cerdo"].some((c) =>
+                              JSON.stringify(plato.ingredientes || "")
+                                .toLowerCase()
+                                .includes(c),
+                            )
+                          ? "🥩"
+                          : "🥗"}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-sm text-gray-800">
+                        {plato.nombre}
+                      </h4>
+                      <p className="text-[11px] text-gray-400 line-clamp-1 italic font-medium max-w-md">
+                        {plato.descripcion ||
+                          "Sin descripción corta registrada."}
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-100">
+                          ${plato.precio}
+                        </span>
+                        <span className="text-[9px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
+                          {plato.ingredientes?.length || 0} Ingredientes
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-        <div className="divide-y divide-gray-100 max-h-[480px] overflow-y-auto pr-1">
-          {bancoDeRecetas.map((plato) => (
-            <div
-              key={plato.id}
-              className="flex items-center justify-between py-3.5 group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl bg-amber-50 p-2 rounded-xl border border-amber-100/50">
-                  🍽️
-                </span>
-                <div>
-                  <h4 className="font-bold text-xs text-gray-800">
-                    {plato.nombre || "Plato sin nombre"}
-                  </h4>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {plato.precio > 0 && (
-                      <span className="text-[10px] text-amber-800 bg-amber-50 font-bold px-1.5 py-0.5 rounded-md">
-                        ${plato.precio}
-                      </span>
-                    )}
-                    <p className="text-[10px] text-gray-400 truncate max-w-[200px] italic">
-                      {plato.descripcion || "Sin descripción corta"}
-                    </p>
+                  <div className="flex gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => activarEdicion(plato)}
+                      className="px-3 py-1.5 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      ✏️ Editar
+                    </button>
+                    <button
+                      onClick={() => eliminarReceta(plato.id, plato.nombre)}
+                      className="px-3 py-1.5 bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      🗑️ Borrar
+                    </button>
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => activarEdicion(plato)}
-                  className="p-2 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wide transition-colors cursor-pointer"
-                >
-                  ✏️ Editar
-                </button>
-                <button
-                  onClick={() => eliminarReceta(plato.id, plato.nombre)}
-                  className="p-2 bg-rose-50 hover:bg-rose-500 text-rose-600 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wide transition-colors cursor-pointer"
-                >
-                  🗑️ Borrar
-                </button>
-              </div>
+              ))}
+
+              {platosFiltrados.length === 0 && (
+                <div className="text-center py-16 text-gray-400 space-y-2">
+                  <span className="text-4xl">🍽️</span>
+                  <p className="text-xs italic font-medium">
+                    No hay recetas que coincidan con los criterios
+                    seleccionados.
+                  </p>
+                </div>
+              )}
             </div>
-          ))}
-          {bancoDeRecetas.length === 0 && (
-            <p className="text-xs text-gray-400 italic text-center py-12">
-              No hay platos registrados en la cocina.
-            </p>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

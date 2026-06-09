@@ -32,8 +32,42 @@ export default function Cocina({ alCerrarSesion }) {
     vaciarListaSemanal,
     obtenerPlatosDeFecha,
     formatearFechaAmigable,
+    actualizarBanco,
   } = useCocina();
 
+  // 👑 SI EL ROL ES CHEF: Vista única, limpia y exclusiva de Gestión
+  if (usuario.rol === "chef") {
+    // 👈 ¡Actualizado con el dato real de Firestore!
+    return (
+      <div className="h-screen w-screen bg-[#FDFBF7] text-[#2C3E50] font-sans flex flex-col overflow-hidden">
+        {/* Header exclusivo para el Chef */}
+        <header className="h-16 bg-white border-b border-amber-100 flex items-center justify-between px-8 shrink-0 shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">👨‍🍳</span>
+            <h2 className="font-serif font-bold text-lg text-gray-800">
+              Consola del Chef Ejecutivo
+            </h2>
+          </div>
+          <button
+            onClick={alCerrarSesion}
+            className="px-4 py-2 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl border border-rose-100 transition-colors cursor-pointer"
+          >
+            Cerrar Sesión
+          </button>
+        </header>
+
+        {/* Panel central a pantalla completa */}
+        <div className="flex-1 p-8 overflow-y-auto bg-[#FDFBF7]">
+          <AdminPanel
+            bancoDeRecetas={bancoDeRecetas}
+            actualizarBanco={actualizarBanco}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 👥 SI EL ROL ES USER: El flujo tradicional de planificación y comensal
   return (
     <div className="h-screen w-screen bg-[#FDFBF7] text-[#2C3E50] font-sans flex overflow-hidden">
       <SidebarNav
@@ -99,7 +133,10 @@ export default function Cocina({ alCerrarSesion }) {
             />
           )}
           {seccionActiva === "admin" && (
-            <AdminPanel bancoDeRecetas={bancoDeRecetas} />
+            <AdminPanel
+              bancoDeRecetas={bancoDeRecetas}
+              actualizarBanco={actualizarBanco}
+            />
           )}
         </div>
       </main>
