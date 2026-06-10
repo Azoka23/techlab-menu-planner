@@ -33,8 +33,9 @@ Diseñado para la fidelización y organización diaria del comensal.
 
 ### 👨‍🍳 2. Perfil Chef / Crítico (`rol: "chef"`)
 
-Un panel de control administrativo y de ingeniería de menú a pantalla completa.
+Un panel de control administrativo y de ingeniería de menú a pantalla completa protegido por políticas de acceso restringido en Frontend.
 
+- **Módulo de Registro Blindado (Gatekeeping):** El formulario de inscripción cuenta con una compuerta condicional interactiva. Al seleccionar el perfil corporativo, se inyecta un campo dinámico de verificación de seguridad con enmascaramiento de caracteres dual (visibilidad mediante tokens `🔒/🔓`). Si la llave provista no coincide con la firma del sistema, el despacho de la mutación a Firebase queda completamente bloqueado.
 - **Ficha Técnica Digital (CRUD):** Módulo optimizado para la creación y modificación de platos, **Costo Estimado de elaboración**, descripciones comerciales e instrucciones paso a paso para el personal de cocina.
 - **Desglose Dinámico de Ingredientes:** Inserción en tiempo real de insumos por receta para alimentar el algoritmo de cálculo del planificador.
 - **Libro de Recetas con Filtros Inteligentes:** Buscador avanzado y selectores rápidos por ADN de plato ("Veggie", "Carnes", "Arroz/Pastas") que escanean automáticamente la estructura interna de los ingredientes.
@@ -45,7 +46,7 @@ Un panel de control administrativo y de ingeniería de menú a pantalla completa
 
 Para facilitar una auditoría fluida, personalizada y directa por parte del evaluador, la base de datos cuenta con perfiles precargados con nombres adaptados para la corrección.
 
-> 💡 **Nota:** El sistema permite tanto el uso de estas credenciales sugeridas como el registro libre de nuevos usuarios desde el formulario de la interfaz seleccionando cualquiera de los dos roles.
+> 💡 **Nota de Evaluación:** El sistema permite tanto el uso de estas credenciales sugeridas como el registro libre de nuevos usuarios. Si desea realizar la simulación de registro de un nuevo **Chef / Crítico**, la interfaz le requerirá de forma obligatoria la **Llave de Autorización del Chef**. Introduzca exactamente la clave de acceso corporativo: **`GUSTEAU2026`**
 
 ### Accesos Sugeridos para la Corrección (Profe Nico):
 

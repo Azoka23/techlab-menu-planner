@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { apiService } from "../services/api";
 
-// Acá arriba agregamos { alCambiarPantalla } para que funcione la redirección limpia
 export default function Register({ alCambiarPantalla }) {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [verPassword, setVerPassword] = useState(false);
-  const [rol, setRol] = useState("user"); // "user" (Comensal) o "chef" (Admin)
+  const [verPassword, setVerPassword] = useState(false); // Ojito de Contraseña
+  const [rol, setRol] = useState("user"); // "user" o "chef"
+  const [llaveChef, setLlaveChef] = useState(""); // 🔑 Estado para la clave
+  const [verLlaveChef, setVerLlaveChef] = useState(false); // 👇 NUEVO: Ojito de Llave de Chef
   const [preferencia, setPreferencia] = useState("sin_restricciones");
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
@@ -15,10 +16,25 @@ export default function Register({ alCambiarPantalla }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // 🛑 VALIDACIÓN TOTALMENTE BLINDADA:
+    if (rol === "chef") {
+      const LLAVE_SECRETA_SISTEMA = "GUSTEAU2026";
+      // trim() limpia espacios vacíos si el usuario los puso por error
+      if (
+        !llaveChef ||
+        llaveChef.trim().toUpperCase() !== LLAVE_SECRETA_SISTEMA
+      ) {
+        setError(
+          "Llave de Autorización incorrecta o ausente. No estás autorizado a registrarte como Chef.",
+        );
+        return;
+      }
+    }
+
     setCargando(true);
 
     try {
-      // Mandamos los datos reales al backend
       await apiService.register(nombre, email, password, rol, preferencia);
 
       alert(
@@ -34,8 +50,8 @@ export default function Register({ alCambiarPantalla }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4 py-12 relative overflow-hidden">
-      {/* Elementos flotantes de la cocina de Gusteau */}
+    <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4 py-6 relative overflow-hidden">
+      {/* Elementos flotantes */}
       <div className="absolute top-12 right-12 text-4xl opacity-15 select-none rotate-45">
         🍅
       </div>
@@ -49,35 +65,35 @@ export default function Register({ alCambiarPantalla }) {
         🌿
       </div>
 
-      <div className="max-w-lg w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100/60 relative">
-        {/* Gorro de Chef superior */}
-        <div className="flex justify-center -mt-16 mb-4">
-          <div className="bg-amber-50 text-3xl p-4 rounded-full shadow-inner border border-amber-100">
+      <div className="max-w-md w-full bg-white p-6 rounded-3xl shadow-xl border border-amber-100/60 relative">
+        {/* Gorro superior */}
+        <div className="flex justify-center -mt-12 mb-3">
+          <div className="bg-amber-50 text-2xl p-3 rounded-full shadow-inner border border-amber-100">
             📜
           </div>
         </div>
 
         {/* Encabezado */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-[#2C3E50] tracking-tight font-serif">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-extrabold text-[#2C3E50] tracking-tight font-serif">
             Registro del <span className="text-amber-600">Bistro</span>
           </h2>
-          <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">
             "Únete a la brigada de cocina"
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-sm rounded-xl text-center font-medium">
+          <div className="mb-4 p-2.5 bg-rose-50 text-rose-600 text-xs rounded-xl text-center font-medium animate-fade-in">
             ❌ {error}
           </div>
         )}
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Nombre */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
               👤 Nombre del Ayudante
             </label>
             <input
@@ -85,14 +101,14 @@ export default function Register({ alCambiarPantalla }) {
               required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-amber-200/60 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200/60 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
               placeholder="Ej. Alfredo Linguini"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
               📧 Correo Electrónico
             </label>
             <input
@@ -100,14 +116,14 @@ export default function Register({ alCambiarPantalla }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-amber-200/60 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200/60 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
               placeholder="linguini@bistro.com"
             />
           </div>
 
-          {/* Contraseña */}
+          {/* Contraseña (Con Ojito de Ratón) */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
               🔑 Contraseña Secreta
             </label>
             <div className="relative">
@@ -116,40 +132,46 @@ export default function Register({ alCambiarPantalla }) {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-amber-200/60 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200/60 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/20"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setVerPassword(!verPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xl hover:scale-125 transition-transform cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-lg hover:scale-125 transition-transform cursor-pointer"
               >
                 {verPassword ? "🐹" : "🐭"}
               </button>
             </div>
           </div>
 
-          {/* Selector de Rol (Estilo Botones Radatouille de Cobre/Madera) */}
+          {/* Botones de Selección */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
               🎭 Asignación en la Cocina
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setRol("user")}
-                className={`py-3 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                onClick={() => {
+                  setRol("user");
+                  setError("");
+                }}
+                className={`py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                   rol === "user"
                     ? "bg-[#2C3E50] border-[#2C3E50] text-white shadow-md"
                     : "bg-white border-amber-200 text-gray-600 hover:bg-amber-50/30"
                 }`}
               >
-                🍽️ Comensal / Cliente
+                🍽️ Comensal
               </button>
               <button
                 type="button"
-                onClick={() => setRol("chef")}
-                className={`py-3 rounded-xl text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                onClick={() => {
+                  setRol("chef");
+                  setError("");
+                }}
+                className={`py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                   rol === "chef"
                     ? "bg-amber-600 border-amber-600 text-white shadow-md"
                     : "bg-white border-amber-200 text-gray-600 hover:bg-amber-50/30"
@@ -160,25 +182,46 @@ export default function Register({ alCambiarPantalla }) {
             </div>
           </div>
 
-          {/* Selector de Preferencias Alimentarias (Muy premium) */}
+          {/* 🔒 👇 NUEVO Campo Condicional con Ojito de Candado Implementado 👇 */}
+          {rol === "chef" && (
+            <div className="space-y-1 animate-fade-in">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">
+                🔒 Llave de Autorización del Chef
+              </label>
+              <div className="relative">
+                <input
+                  type={verLlaveChef ? "text" : "password"} // 👈 Cambia dinámicamente el tipo
+                  required
+                  value={llaveChef}
+                  onChange={(e) => setLlaveChef(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-amber-400 text-xs focus:outline-none focus:ring-2 focus:ring-amber-600 bg-amber-50/40 text-amber-900 placeholder-amber-700/50 font-bold"
+                  placeholder="Introduce el código secreto del Bistro"
+                />
+                <button
+                  type="button"
+                  onClick={() => setVerLlaveChef(!verLlaveChef)} // 👈 Alterna el estado del ojito
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xl hover:scale-125 transition-transform cursor-pointer"
+                >
+                  {verLlaveChef ? "🔓" : "🔒"}{" "}
+                  {/* 👈 Emojis de candado temáticos */}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Selector de Preferencias */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-              🌾 Restricciones o Alergias (Ficha Médica)
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+              🌾 Restricciones Alimentarias
             </label>
             <select
               value={preferencia}
               onChange={(e) => setPreferencia(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-amber-200/60 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white cursor-pointer text-gray-700"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200/60 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white cursor-pointer text-gray-700 font-medium"
             >
-              <option value="sin_restricciones">
-                🍲 Menú Tradicional (Sin restricciones)
-              </option>
-              <option value="vegetariano">
-                🥗 Vegetariano (Estilo Ratatouille clásico)
-              </option>
-              <option value="vegano">
-                🌱 Vegano (100% libre de origen animal)
-              </option>
+              <option value="sin_restricciones">🍲 Menú Tradicional</option>
+              <option value="vegetariano">🥗 Vegetariano (Ratatouille)</option>
+              <option value="vegano">🌱 Vegano (100% Plant-based)</option>
               <option value="celiaco">🌾 Sin TACC / Celíaco</option>
             </select>
           </div>
@@ -187,26 +230,21 @@ export default function Register({ alCambiarPantalla }) {
           <button
             type="submit"
             disabled={cargando}
-            className="w-full mt-2 py-3.5 bg-[#2C3E50] hover:bg-amber-700 text-white text-sm font-bold rounded-xl shadow-md active:scale-[0.98] transition-all duration-150 disabled:opacity-50 cursor-pointer text-center"
+            className="w-full mt-1 py-3 bg-[#2C3E50] hover:bg-amber-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md active:scale-[0.98] transition-all duration-150 disabled:opacity-50 cursor-pointer text-center"
           >
-            {cargando
-              ? "Redactando pergamino..."
-              : "Firmar Contrato con el Bistro 📜"}
+            {cargando ? "Redactando pergamino..." : "Firmar Contrato 📜"}
           </button>
         </form>
 
-        {/* ENLACE NATURAL PARA VOLVER AL LOGIN */}
-        <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-500 uppercase tracking-wider">
-            ¿Ya tenés un puesto en la brigada?{" "}
-            <button
-              type="button"
-              onClick={alCambiarPantalla}
-              className="text-[#2C3E50] font-bold hover:underline cursor-pointer block mx-auto mt-1 text-sm normal-case"
-            >
-              Volver a la cocina 🍳
-            </button>
-          </p>
+        {/* ENLACE PARA VOLVER */}
+        <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+          <button
+            type="button"
+            onClick={alCambiarPantalla}
+            className="text-[#2C3E50] font-bold hover:underline cursor-pointer text-xs"
+          >
+            🍳 Volver a la cocina (Login)
+          </button>
         </div>
       </div>
     </div>
