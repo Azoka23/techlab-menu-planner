@@ -204,13 +204,13 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
               </div>
               <div className="space-y-1">
                 <label className="font-bold text-gray-400 uppercase text-[9px]">
-                  Precio de Carta ($)
+                  Costo Estimado ($)
                 </label>
                 <input
                   type="number"
                   value={precio}
                   onChange={(e) => setPrecio(e.target.value)}
-                  placeholder="0"
+                  placeholder="Ej: 4500"
                   className="w-full p-3 border border-gray-200 rounded-xl text-center font-bold text-amber-800 bg-gray-50/50"
                 />
               </div>
@@ -397,7 +397,7 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
                       </p>
                       <div className="flex gap-2 mt-1">
                         <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-100">
-                          ${plato.precio}
+                          Costo: ${plato.precio}
                         </span>
                         <span className="text-[9px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
                           {plato.ingredientes?.length || 0} Ingredientes

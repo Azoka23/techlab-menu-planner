@@ -34,6 +34,12 @@ export default function PlanificadorPanel({
                     <p className="text-xs text-gray-400 mt-1 line-clamp-2">
                       {plato.desc}
                     </p>
+                    {/* 👇 AGREGADO: Etiqueta de Costo Estimado para el Comensal */}
+                    <div className="mt-2">
+                      <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-100">
+                        Costo: ${plato.precio}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <button
