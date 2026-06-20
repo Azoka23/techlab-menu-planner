@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 
 export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
   // ✨ URL directa agregada acá para saltear el import conflictivo de Vercel
-  const API_URL = "https://bistro-api-arroyo.vercel.app";
+  const API_URL = "";
 
   // 🧭 CONTROL DE PESTAÑAS INTERNAS
   const [subSeccion, setSubSeccion] = useState("formulario"); // "formulario" o "catalogo"
