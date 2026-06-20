@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
-import { API_URL } from "../services/api";
+
 export default function useCocina() {
+  // ✨ URL directa agregada acá para saltear el import conflictivo de Vercel
+  const API_URL = "https://bistro-api-arroyo.vercel.app";
+
   const [usuario, setUsuario] = useState({ nombre: "Ayudante", rol: "user" });
   const [seccionActiva, setSeccionActiva] = useState("planificador");
   const [fechaSeleccionada, setFechaSeleccionada] = useState(

@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
-import { API_URL } from "../../services/api";
 
 export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
+  // ✨ URL directa agregada acá para saltear el import conflictivo de Vercel
+  const API_URL = "https://bistro-api-arroyo.vercel.app";
+
   // 🧭 CONTROL DE PESTAÑAS INTERNAS
   const [subSeccion, setSubSeccion] = useState("formulario"); // "formulario" o "catalogo"
 
@@ -99,7 +101,6 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
       ingredientes,
     };
 
-    // ✨ ACTUALIZADO: Cambiamos localhost por la API_URL dinámica
     const url = idEdicion
       ? `${API_URL}/api/products/${idEdicion}`
       : `${API_URL}/api/products/create`;
@@ -128,7 +129,6 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
     if (!window.confirm(`¿Seguro que querés eliminar ${nombreP}?`)) return;
     const token = localStorage.getItem("token");
 
-    // ✨ ACTUALIZADO: Cambiamos localhost por la API_URL dinámica
     const res = await fetch(`${API_URL}/api/products/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },

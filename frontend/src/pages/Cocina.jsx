@@ -36,8 +36,7 @@ export default function Cocina({ alCerrarSesion }) {
   } = useCocina();
 
   // 👑 SI EL ROL ES CHEF: Vista única, limpia y exclusiva de Gestión
-  if (usuario.rol === "chef") {
-    // 👈 ¡Actualizado con el dato real de Firestore!
+  if (usuario?.rol === "chef") {
     return (
       <div className="h-screen w-screen bg-[#FDFBF7] text-[#2C3E50] font-sans flex flex-col overflow-hidden">
         {/* Header exclusivo para el Chef */}
