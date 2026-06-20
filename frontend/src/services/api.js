@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:3000";
+const API_URL =
+  import.meta.env.VITE_API_URL || "https://bistro-api-arroyo.vercel.app";
 
 export const apiService = {
   // El login que ya funcionaba
