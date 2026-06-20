@@ -10,14 +10,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- MIDDLEWARES GLOBALES ---
-app.use(cors());
+// ✨ Ajustamos CORS para permitir que tu Frontend en Vercel se conecte sin problemas
+app.use(
+  cors({
+    origin: [
+      "https://bistro-app-arroyo.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  }),
+);
+
 app.use(express.json()); // Cumple con el requerimiento de interpretar JSON en el body
 
 // --- CONEXIÓN DE RUTAS ---
-// Al ponerle el prefijo "/auth", la ruta final será: POST http://localhost:3000/auth/login
 app.use("/auth", authRoutes);
-
-// Al ponerle el prefijo "/api/products", coincidirá con: GET /api/products, POST /api/products/create, etc.
 app.use("/api/products", productsRoutes);
 
 // Ruta de prueba para verificar que el servidor responda
@@ -29,7 +38,6 @@ app.get("/ping", (req, res) => {
 });
 
 // --- MIDDLEWARE PARA RUTAS DESCONOCIDAS (REQUERIMIENTO #3) ---
-// Este middleware atrapa cualquier ruta que no coincida con las anteriores y devuelve un 404
 app.use((req, res) => {
   res.status(404).json({
     status: "error",
