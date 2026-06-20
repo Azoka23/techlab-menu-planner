@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import { API_URL } from "../services/api";
 export default function useCocina() {
   const [usuario, setUsuario] = useState({ nombre: "Ayudante", rol: "user" });
   const [seccionActiva, setSeccionActiva] = useState("planificador");
@@ -32,7 +32,7 @@ export default function useCocina() {
   // 🔄 Conexión con Firestore
   const cargarPlatosDeFirestore = async () => {
     try {
-      const respuesta = await fetch("http://localhost:3000/api/products");
+      const respuesta = await fetch(`${API_URL}/api/products`);
       const resultado = await respuesta.json();
       if (resultado.status === "success" && Array.isArray(resultado.data)) {
         setBancoDeRecetas(resultado.data);

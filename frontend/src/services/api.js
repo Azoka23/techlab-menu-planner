@@ -1,9 +1,10 @@
 //const API_URL =
 //import.meta.env.VITE_API_URL || "https://bistro-api-arroyo.vercel.app";
 // Agregamos .replace(/\/$/, "") al final para que borre cualquier barra rebelde
-const API_URL = (
+export const API_URL = (
   import.meta.env.VITE_API_URL || "https://bistro-api-arroyo.vercel.app"
 ).replace(/\/$/, "");
+
 export const apiService = {
   // El login que ya funcionaba
   login: async (email, password) => {

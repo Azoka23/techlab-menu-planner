@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { API_URL } from "../../services/api";
 
 export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
   // 🧭 CONTROL DE PESTAÑAS INTERNAS
@@ -33,16 +34,9 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
       if (filtroEspecial === "carne") {
         return (
           matchBusqueda &&
-          [
-            "carne",
-            "pollo",
-            "vaca",
-            "cerdo",
-            "lomo",
-            "bife",
-            "panceta",
-            "bife",
-          ].some((c) => ingredientesString.includes(c))
+          ["carne", "pollo", "vaca", "cerdo", "lomo", "bife", "panceta"].some(
+            (c) => ingredientesString.includes(c),
+          )
         );
       }
       if (filtroEspecial === "veggie") {
@@ -104,9 +98,11 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
       receta,
       ingredientes,
     };
+
+    // ✨ ACTUALIZADO: Cambiamos localhost por la API_URL dinámica
     const url = idEdicion
-      ? `http://localhost:3000/api/products/${idEdicion}`
-      : "http://localhost:3000/api/products/create";
+      ? `${API_URL}/api/products/${idEdicion}`
+      : `${API_URL}/api/products/create`;
 
     try {
       const res = await fetch(url, {
@@ -131,7 +127,9 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
   const eliminarReceta = async (id, nombreP) => {
     if (!window.confirm(`¿Seguro que querés eliminar ${nombreP}?`)) return;
     const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:3000/api/products/${id}`, {
+
+    // ✨ ACTUALIZADO: Cambiamos localhost por la API_URL dinámica
+    const res = await fetch(`${API_URL}/api/products/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -167,9 +165,7 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
         </button>
       </div>
 
-      {/* ---------------------------------------------------- */}
-      {/* 📝 SECCIÓN A: FORMULARIO AISLADO */}
-      {/* ---------------------------------------------------- */}
+      {/* 📝 SECCIÓN A: FORMULARIO */}
       {subSeccion === "formulario" && (
         <div className="bg-white p-6 rounded-3xl shadow-xl border border-amber-100/70 max-w-2xl mx-auto space-y-5">
           <div className="flex items-center justify-between border-b border-amber-100 pb-3">
@@ -316,12 +312,9 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
         </div>
       )}
 
-      {/* ---------------------------------------------------- */}
-      {/* 📖 SECCIÓN B: LIBRO DE RECETAS (CATÁLOGO INDEPENDIENTE) */}
-      {/* ---------------------------------------------------- */}
+      {/* 📖 SECCIÓN B: LIBRO DE RECETAS */}
       {subSeccion === "catalogo" && (
         <div className="space-y-4 animate-fade-in">
-          {/* Barra de Filtros y Buscador limpia */}
           <div className="bg-white p-4 rounded-2xl shadow-md border border-amber-100 flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="relative w-full md:w-96">
               <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -356,7 +349,6 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
             </div>
           </div>
 
-          {/* El listado, ahora aislado y cómodo */}
           <div className="bg-white rounded-3xl shadow-xl border border-amber-100 overflow-hidden">
             <div className="p-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center">
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
