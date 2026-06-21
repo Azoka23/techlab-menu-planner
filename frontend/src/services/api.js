@@ -1,12 +1,8 @@
-//const API_URL =
-//import.meta.env.VITE_API_URL || "https://bistro-api-arroyo.vercel.app";
-// Agregamos .replace(/\/$/, "") al final para que borre cualquier barra rebelde
-export const API_URL = (
-  import.meta.env.VITE_API_URL || "https://bistro-api-arroyo.vercel.app"
-).replace(/\/$/, "");
+// ✨ Configuración para el Monorepo en Vercel: apuntamos a la ruta relativa /api
+export const API_URL = "/api";
 
 export const apiService = {
-  // El login que ya funcionaba
+  // Login adaptado para pasar por el proxy de Vercel (/api/auth/login)
   login: async (email, password) => {
     const res = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
@@ -20,7 +16,7 @@ export const apiService = {
     return res.json();
   },
 
-  // ✨ AGREGAMOS ESTO: El nuevo método para enviar el contrato al Bistro
+  // Registro adaptado para pasar por el proxy de Vercel (/api/auth/register)
   register: async (nombre, email, password, rol, preferencia) => {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
