@@ -1,5 +1,5 @@
 // Apuntamos directo al dominio del backend en internet
-export const API_URL = "";
+export const API_URL = "https://bistro-api-arroyo.vercel.app";
 
 export const apiService = {
   // El login va a https://bistro-api-arroyo.vercel.app/auth/login

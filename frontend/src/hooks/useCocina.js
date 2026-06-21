@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 export default function useCocina() {
   // ✨ URL directa del backend en internet para evitar problemas de ruteo local
-  const API_URL = "";
+  const API_URL = "https://bistro-api-arroyo.vercel.app";
 
   const [usuario, setUsuario] = useState({ nombre: "Ayudante", rol: "user" });
   const [seccionActiva, setSeccionActiva] = useState("planificador");
