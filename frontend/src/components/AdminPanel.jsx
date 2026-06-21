@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 
 export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
   // ✨ URL directa del backend en internet para que guarde, edite y borre en la base de datos real
-  const API_URL = "https://bistro-api-arroyo.vercel.app";
+  const API_URL = "";
 
   // 🧭 CONTROL DE PESTAÑAS INTERNES
   const [subSeccion, setSubSeccion] = useState("formulario"); // "formulario" o "catalogo"
