@@ -1,0 +1,6 @@
+{
+  "routes": [
+    { "src": "/auth/(.*)", "dest": "index.js" },
+    { "src": "/api/products(.*)", "dest": "index.js" }
+  ]
+}
