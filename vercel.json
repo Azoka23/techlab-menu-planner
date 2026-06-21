@@ -10,18 +10,22 @@
       "use": "@vercel/vite"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/products/:path*",
-      "destination": "backend/index.js"
+      "src": "/auth/(.*)",
+      "dest": "backend/index.js"
     },
     {
-      "source": "/auth/:path*",
-      "destination": "backend/index.js"
+      "src": "/api/products(.*)",
+      "dest": "backend/index.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "frontend/index.html"
+      "src": "/assets/(.*)",
+      "dest": "frontend/dist/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/index.html"
     }
   ]
 }
