@@ -22,35 +22,82 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
   const [busqueda, setBusqueda] = useState("");
   const [filtroEspecial, setFiltroEspecial] = useState("todos");
 
-  // 🧠 FILTRADO INTELIGENTE
+  // 🧠 FILTRADO INTELIGENTE AMPLIADO
   const platosFiltrados = useMemo(() => {
     return bancoDeRecetas.filter((plato) => {
       const matchBusqueda =
         plato.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
         plato.descripcion?.toLowerCase().includes(busqueda.toLowerCase());
 
-      const ingredientesString = JSON.stringify(
-        plato.ingredientes || "",
-      ).toLowerCase();
+      // Unificamos nombre e ingredientes en un solo string para filtrar de manera uniforme
+      const textoPlatoCompleto =
+        `${plato.nombre} ${JSON.stringify(plato.ingredientes || "")}`.toLowerCase();
 
+      if (filtroEspecial === "arroz") {
+        return (
+          matchBusqueda &&
+          (textoPlatoCompleto.includes("arroz") ||
+            textoPlatoCompleto.includes("risotto"))
+        );
+      }
       if (filtroEspecial === "carne") {
         return (
           matchBusqueda &&
-          ["carne", "pollo", "vaca", "cerdo", "lomo", "bife", "panceta"].some(
-            (c) => ingredientesString.includes(c),
+          [
+            "carne",
+            "pollo",
+            "cerdo",
+            "lomo",
+            "bife",
+            "milanesa",
+            "ternera",
+          ].some((c) => textoPlatoCompleto.includes(c))
+        );
+      }
+      if (filtroEspecial === "pastas") {
+        return (
+          matchBusqueda &&
+          ["sorrentinos", "pasta", "fideos", "ñoquis", "raviol", "lasaña"].some(
+            (p) => textoPlatoCompleto.includes(p),
           )
+        );
+      }
+      if (filtroEspecial === "postres") {
+        return (
+          matchBusqueda &&
+          ["dulce", "postre", "panqueque", "torta", "helado", "chocolate"].some(
+            (d) => textoPlatoCompleto.includes(d),
+          )
+        );
+      }
+      if (filtroEspecial === "panificados") {
+        return (
+          matchBusqueda &&
+          [
+            "pan",
+            "galleta",
+            "factura",
+            "medialuna",
+            "focaccia",
+            "miga",
+            "bizcocho",
+          ].some((pan) => textoPlatoCompleto.includes(pan))
         );
       }
       if (filtroEspecial === "veggie") {
+        // Excluye las carnes para mantener la categoría vegetariana pura
         return (
           matchBusqueda &&
-          !["carne", "pollo", "vaca", "cerdo", "lomo", "bife", "panceta"].some(
-            (c) => ingredientesString.includes(c),
-          )
+          ![
+            "carne",
+            "pollo",
+            "cerdo",
+            "lomo",
+            "bife",
+            "milanesa",
+            "ternera",
+          ].some((c) => textoPlatoCompleto.includes(c))
         );
-      }
-      if (filtroEspecial === "arroz") {
-        return matchBusqueda && ingredientesString.includes("arroz");
       }
       return matchBusqueda;
     });
@@ -62,7 +109,7 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
       ...ingredientes,
       {
         nombre: nuevoIngNombre,
-        blankidad: Number(nuevoIngCant),
+        cantidad: Number(nuevoIngCant), // Corregido 'blankidad' a 'cantidad' para consistencia
         unidad: nuevoIngUnidad,
       },
     ]);
@@ -319,7 +366,7 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
       {subSeccion === "catalogo" && (
         <div className="space-y-4 animate-fade-in">
           <div className="bg-white p-4 rounded-2xl shadow-md border border-amber-100 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:w-96">
+            <div className="relative w-full md:w-80">
               <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
               <input
                 type="text"
@@ -334,8 +381,11 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
               {[
                 { id: "todos", label: "Ver Todos", icon: "🍽️" },
                 { id: "carne", label: "Carnes", icon: "🥩" },
+                { id: "pastas", label: "Pastas", icon: "🍝" },
+                { id: "arroz", label: "Arroz", icon: "🍚" },
+                { id: "panificados", label: "Panificados", icon: "🍞" },
+                { id: "postres", label: "Postres", icon: "🍰" },
                 { id: "veggie", label: "Veggie", icon: "🥗" },
-                { id: "arroz", label: "Con Arroz", icon: "🍚" },
               ].map((f) => (
                 <button
                   key={f.id}
