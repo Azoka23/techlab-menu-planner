@@ -371,17 +371,77 @@ export default function AdminPanel({ bancoDeRecetas, actualizarBanco }) {
                 >
                   <div className="flex items-center gap-4">
                     <span className="text-xl bg-gray-50 p-2.5 rounded-xl border border-gray-100 shadow-sm">
-                      {JSON.stringify(plato.ingredientes || "")
-                        .toLowerCase()
-                        .includes("arroz")
-                        ? "🍚"
-                        : ["carne", "pollo", "cerdo"].some((c) =>
-                              JSON.stringify(plato.ingredientes || "")
-                                .toLowerCase()
-                                .includes(c),
-                            )
-                          ? "🥩"
-                          : "🥗"}
+                      {(() => {
+                        // Unificamos nombre e ingredientes en un solo texto para buscar fácil
+                        const textoPlato =
+                          `${plato.nombre} ${JSON.stringify(plato.ingredientes || "")}`.toLowerCase();
+
+                        if (
+                          textoPlato.includes("arroz") ||
+                          textoPlato.includes("risotto")
+                        )
+                          return "🍚";
+                        if (
+                          [
+                            "carne",
+                            "pollo",
+                            "cerdo",
+                            "lomo",
+                            "bife",
+                            "milanesa",
+                            "ternera",
+                          ].some((c) => textoPlato.includes(c))
+                        )
+                          return "🥩";
+                        if (
+                          [
+                            "sorrentinos",
+                            "pasta",
+                            "fideos",
+                            "ñoquis",
+                            "raviol",
+                            "lasaña",
+                          ].some((p) => textoPlato.includes(p))
+                        )
+                          return "🍝";
+                        if (
+                          [
+                            "dulce",
+                            "postre",
+                            "panqueque",
+                            "torta",
+                            "helado",
+                            "chocolate",
+                          ].some((d) => textoPlato.includes(d))
+                        )
+                          return "🍰";
+                        if (
+                          [
+                            "pan",
+                            "galleta",
+                            "factura",
+                            "medialuna",
+                            "focaccia",
+                            "miga",
+                            "bizcocho",
+                          ].some((pan) => textoPlato.includes(pan))
+                        )
+                          return "🍞";
+                        if (
+                          [
+                            "tarta",
+                            "espinaca",
+                            "verdura",
+                            "ensalada",
+                            "veggie",
+                            "calabaza",
+                          ].some((v) => textoPlato.includes(v))
+                        )
+                          return "🥗";
+
+                        // Comodín universal si no es ninguno de los anteriores
+                        return "🍽️";
+                      })()}
                     </span>
                     <div>
                       <h4 className="font-bold text-sm text-gray-800">
