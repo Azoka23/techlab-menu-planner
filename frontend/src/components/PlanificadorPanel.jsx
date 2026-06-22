@@ -5,6 +5,51 @@ export default function PlanificadorPanel({
   platosElegidosHoy,
   eliminarPlatoDeFecha,
 }) {
+  // 🧠 Función compartida para calcular el icono de forma inteligente
+  const obtenerIconoInteligente = (plato) => {
+    const textoPlato =
+      `${plato.nombre} ${JSON.stringify(plato.ingredientes || "")}`.toLowerCase();
+    if (textoPlato.includes("arroz") || textoPlato.includes("risotto"))
+      return "🍚";
+    if (
+      ["carne", "pollo", "cerdo", "lomo", "bife", "milanesa", "ternera"].some(
+        (c) => textoPlato.includes(c),
+      )
+    )
+      return "🥩";
+    if (
+      ["sorrentinos", "pasta", "fideos", "ñoquis", "raviol", "lasaña"].some(
+        (p) => textoPlato.includes(p),
+      )
+    )
+      return "🍝";
+    if (
+      ["dulce", "postre", "panqueque", "torta", "helado", "chocolate"].some(
+        (d) => textoPlato.includes(d),
+      )
+    )
+      return "🍰";
+    if (
+      [
+        "pan",
+        "galleta",
+        "factura",
+        "medialuna",
+        "focaccia",
+        "miga",
+        "bizcocho",
+      ].some((pan) => textoPlato.includes(pan))
+    )
+      return "🍞";
+    if (
+      ["tarta", "espinaca", "verdura", "ensalada", "veggie", "calabaza"].some(
+        (v) => textoPlato.includes(v),
+      )
+    )
+      return "🥗";
+    return "🍽️";
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       {/* Catálogo de Recetas */}
@@ -25,14 +70,14 @@ export default function PlanificadorPanel({
                   onClick={() => setRecetaAbierta(plato)}
                 >
                   <div className="text-3xl bg-amber-50 p-2 rounded-xl">
-                    {plato.emoji || "🍽️"}
+                    {obtenerIconoInteligente(plato)}
                   </div>
                   <div>
                     <h4 className="font-bold text-sm text-gray-800 hover:text-amber-600 transition-colors">
                       {plato.nombre} 📖
                     </h4>
                     <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                      {plato.desc}
+                      {plato.desc || plato.descripcion}
                     </p>
                     {/* 👇 AGREGADO: Etiqueta de Costo Estimado para el Comensal */}
                     <div className="mt-2">
@@ -75,7 +120,7 @@ export default function PlanificadorPanel({
                   className="truncate cursor-pointer hover:text-amber-600"
                   onClick={() => setRecetaAbierta(plato)}
                 >
-                  {plato.emoji || "🍽️"} {plato.nombre} 📖
+                  {obtenerIconoInteligente(plato)} {plato.nombre} 📖
                 </span>
                 <button
                   onClick={() => eliminarPlatoDeFecha(plato.id)}

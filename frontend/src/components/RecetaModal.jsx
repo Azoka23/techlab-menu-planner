@@ -1,12 +1,59 @@
 export default function RecetaModal({ recetaAbierta, setRecetaAbierta }) {
   if (!recetaAbierta) return null;
 
+  // 🧠 Calculamos el icono inteligente también acá antes de renderizar
+  const obtenerIconoInteligente = (plato) => {
+    const textoPlato =
+      `${plato.nombre} ${JSON.stringify(plato.ingredientes || "")}`.toLowerCase();
+    if (textoPlato.includes("arroz") || textoPlato.includes("risotto"))
+      return "🍚";
+    if (
+      ["carne", "pollo", "cerdo", "lomo", "bife", "milanesa", "ternera"].some(
+        (c) => textoPlato.includes(c),
+      )
+    )
+      return "🥩";
+    if (
+      ["sorrentinos", "pasta", "fideos", "ñoquis", "raviol", "lasaña"].some(
+        (p) => textoPlato.includes(p),
+      )
+    )
+      return "🍝";
+    if (
+      ["dulce", "postre", "panqueque", "torta", "helado", "chocolate"].some(
+        (d) => textoPlato.includes(d),
+      )
+    )
+      return "🍰";
+    if (
+      [
+        "pan",
+        "galleta",
+        "factura",
+        "medialuna",
+        "focaccia",
+        "miga",
+        "bizcocho",
+      ].some((pan) => textoPlato.includes(pan))
+    )
+      return "🍞";
+    if (
+      ["tarta", "espinaca", "verdura", "ensalada", "veggie", "calabaza"].some(
+        (v) => textoPlato.includes(v),
+      )
+    )
+      return "🥗";
+    return "🍽️";
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
       <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 max-h-[85vh] overflow-y-auto border border-amber-100 shadow-2xl space-y-6">
         <div className="flex justify-between items-start border-b border-gray-100 pb-4">
           <div className="flex gap-3 items-center">
-            <span className="text-4xl">{recetaAbierta.emoji || "🍽️"}</span>
+            <span className="text-4xl">
+              {obtenerIconoInteligente(recetaAbierta)}
+            </span>
             <div>
               <h3 className="font-serif font-bold text-xl text-gray-800">
                 {recetaAbierta.nombre}
@@ -34,7 +81,7 @@ export default function RecetaModal({ recetaAbierta, setRecetaAbierta }) {
                 <li key={i} className="flex justify-between items-center">
                   <span>• {ing.nombre}</span>
                   <span className="font-mono font-bold text-gray-500">
-                    {ing.cantidad} {ing.unidad}
+                    {ing.cantidad || ing.blankidad} {ing.unidad}
                   </span>
                 </li>
               ))
@@ -51,7 +98,12 @@ export default function RecetaModal({ recetaAbierta, setRecetaAbierta }) {
             👨‍🍳 Instrucciones:
           </h4>
           <ol className="space-y-3 text-xs text-gray-600">
-            {recetaAbierta.pasos?.length > 0 ? (
+            {/* Se adaptó para que lea tanto 'receta' como 'pasos' por si cambian las propiedades */}
+            {recetaAbierta.receta ? (
+              <div className="bg-amber-50/20 p-3 rounded-xl border border-amber-100/20 leading-relaxed whitespace-pre-line">
+                {recetaAbierta.receta}
+              </div>
+            ) : recetaAbierta.pasos?.length > 0 ? (
               recetaAbierta.pasos.map((paso, i) => (
                 <li
                   key={i}
